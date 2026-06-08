@@ -10,12 +10,17 @@ const PORT = process.env.PORT || 3000;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || "v25.0";
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   if (req.method === "GET" && url.pathname === "/") {
     return sendText(res, 200, "WhatsApp bot is running.");
+  }
+
+  if (req.method === "GET" && url.pathname === "/health") {
+    return sendText(res, 200, "ok");
   }
 
   if (req.method === "GET" && url.pathname === "/webhook") {
@@ -112,17 +117,87 @@ function getIncomingMessage(body) {
 }
 
 function buildReply(text) {
-  const lower = text.toLowerCase();
+  const clean = text.trim();
+  const lower = clean.toLowerCase();
 
-  if (lower === "hi" || lower === "hello" || lower === "assalamualaikum") {
-    return "Hello! Apnar message peyechi. Ki help lagbe?";
+  if (!clean) {
+    return mainMenu();
   }
 
-  if (lower.includes("price") || lower.includes("dam")) {
-    return "Price details janar jonno product name/pathan.";
+  if (hasAny(lower, ["hi", "hello", "hey", "assalamualaikum", "salam", "start", "menu"])) {
+    return mainMenu();
   }
 
-  return `Apni bolechen: ${text || "empty message"}`;
+  if (hasAny(lower, ["price", "dam", "rate", "tk", "taka", "list"])) {
+    return [
+      "Price list:",
+      "1. Basic package - message korun: basic",
+      "2. Standard package - message korun: standard",
+      "3. Premium package - message korun: premium",
+      "",
+      "Exact price/product er jonno product name pathan."
+    ].join("\n");
+  }
+
+  if (hasAny(lower, ["basic"])) {
+    return "Basic package details pete apnar requirement/product name pathan. Admin confirm kore price bolbe.";
+  }
+
+  if (hasAny(lower, ["standard"])) {
+    return "Standard package e extra support thakbe. Apnar kajer details pathan, amra quote dibo.";
+  }
+
+  if (hasAny(lower, ["premium"])) {
+    return "Premium package urgent/priority kajer jonno. Details pathan, admin fast reply korbe.";
+  }
+
+  if (hasAny(lower, ["order", "buy", "kinbo", "nibo", "need", "lagbe"])) {
+    return [
+      "Order korte ei info pathan:",
+      "1. Product/service name",
+      "2. Quantity",
+      "3. Delivery/contact info",
+      "",
+      "Admin shortly confirm korbe."
+    ].join("\n");
+  }
+
+  if (hasAny(lower, ["support", "help", "problem", "issue", "admin"])) {
+    return [
+      "Support er jonno apnar problem details pathan.",
+      "Urgent hole likhun: urgent",
+      "Admin dekhe reply korbe."
+    ].join("\n");
+  }
+
+  if (hasAny(lower, ["urgent", "fast", "quick"])) {
+    return "Urgent request received. Apnar kaj/problem details ek message-e pathan.";
+  }
+
+  if (hasAny(lower, ["thanks", "thank", "dhonnobad", "ok", "okay"])) {
+    return "Welcome. Aro help lagle menu likhun.";
+  }
+
+  return [
+    `Apni bolechen: ${clean}`,
+    "",
+    "Options dekhte menu likhun, price janar jonno price likhun, order korte order likhun."
+  ].join("\n");
+}
+
+function mainMenu() {
+  return [
+    "Assalamualaikum! Ki help lagbe?",
+    "",
+    "1. Price janar jonno: price",
+    "2. Order korte: order",
+    "3. Support pete: support",
+    "4. Admin help: admin"
+  ].join("\n");
+}
+
+function hasAny(text, keywords) {
+  return keywords.some((keyword) => text.includes(keyword));
 }
 
 async function sendWhatsAppMessage(to, body) {
@@ -131,7 +206,7 @@ async function sendWhatsAppMessage(to, body) {
   }
 
   const response = await fetch(
-    `https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`,
+    `https://graph.facebook.com/${GRAPH_API_VERSION}/${PHONE_NUMBER_ID}/messages`,
     {
       method: "POST",
       headers: {

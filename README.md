@@ -16,6 +16,7 @@ copy .env.example .env
 VERIFY_TOKEN=my_verify_token_123
 WHATSAPP_TOKEN=your_meta_access_token
 PHONE_NUMBER_ID=your_phone_number_id
+GRAPH_API_VERSION=v25.0
 ```
 
 3. Bot run korun:
@@ -61,5 +62,15 @@ hi
 Bot reply debe:
 
 ```text
-Hello! Apnar message peyechi. Ki help lagbe?
+Assalamualaikum! Ki help lagbe?
+```
+
+Useful test messages:
+
+```text
+menu
+price
+order
+support
+urgent
 ```
