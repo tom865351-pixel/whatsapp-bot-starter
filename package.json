@@ -1,0 +1,10 @@
+{
+  "name": "whatsapp-bot-starter",
+  "version": "1.0.0",
+  "description": "Simple WhatsApp Cloud API auto-reply bot with Express.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  }
+}

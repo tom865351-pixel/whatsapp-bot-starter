@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: whatsapp-bot
+    runtime: node
+    buildCommand: ""
+    startCommand: "node server.js"
+    envVars:
+      - key: VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: PHONE_NUMBER_ID
+        sync: false
