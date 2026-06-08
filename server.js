@@ -11,6 +11,15 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || "v25.0";
+const stats = {
+  startedAt: new Date().toISOString(),
+  webhookCount: 0,
+  messageCount: 0,
+  lastWebhookAt: null,
+  lastMessageAt: null,
+  lastReplyAt: null,
+  lastError: null
+};
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -30,7 +39,8 @@ const server = http.createServer(async (req, res) => {
       whatsappTokenSet: Boolean(WHATSAPP_TOKEN),
       phoneNumberIdSet: Boolean(PHONE_NUMBER_ID),
       phoneNumberIdLast4: PHONE_NUMBER_ID ? PHONE_NUMBER_ID.slice(-4) : null,
-      graphApiVersion: GRAPH_API_VERSION
+      graphApiVersion: GRAPH_API_VERSION,
+      stats
     });
   }
 
@@ -51,6 +61,8 @@ const server = http.createServer(async (req, res) => {
 
     try {
       const body = await readJson(req);
+      stats.webhookCount += 1;
+      stats.lastWebhookAt = new Date().toISOString();
       log("Webhook received", JSON.stringify(body));
       const message = getIncomingMessage(body);
       if (!message) {
@@ -60,11 +72,16 @@ const server = http.createServer(async (req, res) => {
 
       const from = message.from;
       const text = getMessageText(message);
+      stats.messageCount += 1;
+      stats.lastMessageAt = new Date().toISOString();
 
       const reply = buildReply(text);
       await sendWhatsAppMessage(from, reply);
+      stats.lastReplyAt = new Date().toISOString();
+      stats.lastError = null;
       log(`Reply sent to ${from}: ${JSON.stringify(reply)}`);
     } catch (error) {
+      stats.lastError = error.message.slice(0, 500);
       log(`Webhook error: ${error.message}`);
       console.error("Webhook error:", error.message);
     }
