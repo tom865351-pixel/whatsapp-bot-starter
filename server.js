@@ -23,6 +23,17 @@ const server = http.createServer(async (req, res) => {
     return sendText(res, 200, "ok");
   }
 
+  if (req.method === "GET" && url.pathname === "/debug/status") {
+    return sendJson(res, 200, {
+      ok: true,
+      verifyTokenSet: Boolean(VERIFY_TOKEN),
+      whatsappTokenSet: Boolean(WHATSAPP_TOKEN),
+      phoneNumberIdSet: Boolean(PHONE_NUMBER_ID),
+      phoneNumberIdLast4: PHONE_NUMBER_ID ? PHONE_NUMBER_ID.slice(-4) : null,
+      graphApiVersion: GRAPH_API_VERSION
+    });
+  }
+
   if (req.method === "GET" && url.pathname === "/webhook") {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
@@ -85,6 +96,11 @@ function loadEnv() {
 function sendText(res, statusCode, text) {
   res.writeHead(statusCode, { "Content-Type": "text/plain" });
   res.end(text);
+}
+
+function sendJson(res, statusCode, data) {
+  res.writeHead(statusCode, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(data));
 }
 
 function log(message, details = "") {
