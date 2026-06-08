@@ -48,11 +48,11 @@ const server = http.createServer(async (req, res) => {
       }
 
       const from = message.from;
-      const text = message.text?.body?.trim() || "";
+      const text = getMessageText(message);
 
       const reply = buildReply(text);
       await sendWhatsAppMessage(from, reply);
-      log(`Reply sent to ${from}: ${reply}`);
+      log(`Reply sent to ${from}: ${JSON.stringify(reply)}`);
     } catch (error) {
       log(`Webhook error: ${error.message}`);
       console.error("Webhook error:", error.message);
@@ -116,27 +116,34 @@ function getIncomingMessage(body) {
   return body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 }
 
+function getMessageText(message) {
+  if (message.text?.body) return message.text.body.trim();
+
+  const buttonReply = message.interactive?.button_reply;
+  if (buttonReply) return (buttonReply.id || buttonReply.title || "").trim();
+
+  const listReply = message.interactive?.list_reply;
+  if (listReply) return (listReply.id || listReply.title || "").trim();
+
+  if (message.button?.text) return message.button.text.trim();
+
+  return "";
+}
+
 function buildReply(text) {
   const clean = text.trim();
   const lower = clean.toLowerCase();
 
   if (!clean) {
-    return mainMenu();
+    return mainMenuButtons();
   }
 
   if (hasAny(lower, ["hi", "hello", "hey", "assalamualaikum", "salam", "start", "menu"])) {
-    return mainMenu();
+    return mainMenuButtons();
   }
 
-  if (hasAny(lower, ["price", "dam", "rate", "tk", "taka", "list"])) {
-    return [
-      "Price list:",
-      "1. Basic package - message korun: basic",
-      "2. Standard package - message korun: standard",
-      "3. Premium package - message korun: premium",
-      "",
-      "Exact price/product er jonno product name pathan."
-    ].join("\n");
+  if (hasAny(lower, ["price", "dam", "rate", "tk", "taka", "list", "btn_price"])) {
+    return priceReply();
   }
 
   if (hasAny(lower, ["basic"])) {
@@ -151,7 +158,7 @@ function buildReply(text) {
     return "Premium package urgent/priority kajer jonno. Details pathan, admin fast reply korbe.";
   }
 
-  if (hasAny(lower, ["order", "buy", "kinbo", "nibo", "need", "lagbe"])) {
+  if (hasAny(lower, ["order", "buy", "kinbo", "nibo", "need", "lagbe", "btn_order"])) {
     return [
       "Order korte ei info pathan:",
       "1. Product/service name",
@@ -162,7 +169,7 @@ function buildReply(text) {
     ].join("\n");
   }
 
-  if (hasAny(lower, ["support", "help", "problem", "issue", "admin"])) {
+  if (hasAny(lower, ["support", "help", "problem", "issue", "admin", "btn_support"])) {
     return [
       "Support er jonno apnar problem details pathan.",
       "Urgent hole likhun: urgent",
@@ -196,6 +203,45 @@ function mainMenu() {
   ].join("\n");
 }
 
+function mainMenuButtons() {
+  return {
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: {
+        text: "Assalamualaikum! Ki help lagbe?"
+      },
+      action: {
+        buttons: [
+          {
+            type: "reply",
+            reply: { id: "btn_price", title: "Price" }
+          },
+          {
+            type: "reply",
+            reply: { id: "btn_order", title: "Order" }
+          },
+          {
+            type: "reply",
+            reply: { id: "btn_support", title: "Support" }
+          }
+        ]
+      }
+    }
+  };
+}
+
+function priceReply() {
+  return [
+    "Price list:",
+    "1. Basic package - message korun: basic",
+    "2. Standard package - message korun: standard",
+    "3. Premium package - message korun: premium",
+    "",
+    "Exact price/product er jonno product name pathan."
+  ].join("\n");
+}
+
 function hasAny(text, keywords) {
   return keywords.some((keyword) => text.includes(keyword));
 }
@@ -213,12 +259,7 @@ async function sendWhatsAppMessage(to, body) {
         Authorization: `Bearer ${WHATSAPP_TOKEN}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body }
-      })
+      body: JSON.stringify(buildWhatsAppPayload(to, body))
     }
   );
 
@@ -226,6 +267,28 @@ async function sendWhatsAppMessage(to, body) {
     const errorBody = await response.text();
     throw new Error(`WhatsApp API failed: ${response.status} ${errorBody}`);
   }
+}
+
+function buildWhatsAppPayload(to, message) {
+  if (typeof message === "object" && message !== null) {
+    return {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to,
+      ...message
+    };
+  }
+
+  return {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+    type: "text",
+    text: {
+      preview_url: false,
+      body: String(message)
+    }
+  };
 }
 
 server.listen(PORT, () => {

@@ -74,3 +74,9 @@ order
 support
 urgent
 ```
+
+`hi` or `menu` dile WhatsApp interactive buttons ashbe:
+
+```text
+Price | Order | Support
+```
