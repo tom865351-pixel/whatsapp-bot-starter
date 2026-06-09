@@ -1,4 +1,5 @@
 .env
 webhook.log
+data/
 node_modules/
 .DS_Store

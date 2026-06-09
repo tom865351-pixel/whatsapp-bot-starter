@@ -1,82 +1,145 @@
-# WhatsApp Bot Starter
+# Premium WhatsApp Mail Shop Bot
 
-Simple WhatsApp Cloud API auto-reply bot. Eta plain Node.js diye banano, tai extra package install kora lagbe na.
+Render-ready WhatsApp Cloud API shop bot for digital mail/account products.
 
-## Setup
+## Features
 
-1. `.env.example` copy kore `.env` banan:
+- Auto user registration by WhatsApp number
+- WhatsApp interactive list menu
+- Profile and balance
+- Product catalog
+- Single and bulk buy
+- Auto delivery from stock after purchase
+- Order history
+- Deposit request and deposit status
+- Coupon redeem
+- Referral code
+- Sell request submission
+- Support flow
+- Admin commands
+- Product and stock management
+- Deposit approve/reject with audit log
+- Ban/unban and add balance
+- Broadcast
+- Low stock alert
+- Optional Gemini AI support agent
 
-```bash
-copy .env.example .env
-```
+## Render Environment Variables
 
-2. `.env` file-e Meta dashboard-er values boshan:
+Required:
 
 ```env
-VERIFY_TOKEN=my_verify_token_123
-WHATSAPP_TOKEN=your_meta_access_token
-PHONE_NUMBER_ID=your_phone_number_id
-GRAPH_API_VERSION=v25.0
+WHATSAPP_VERIFY_TOKEN=my_verify_token_123
+WHATSAPP_ACCESS_TOKEN=your_production_or_test_token
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+ADMIN_IDS=8801XXXXXXXXX,16078827307
 ```
 
-3. Bot run korun:
+Optional:
 
-```bash
-node server.js
+```env
+CURRENCY_SYMBOL=TK
+MIN_DEPOSIT=100
+SUPPORT_WHATSAPP_NUMBER=
+BKASH_NUMBER=
+NAGAD_NUMBER=
+ROCKET_NUMBER=
+BINANCE_PAY_ID=
+USDT_TRC20_ADDRESS=
+USDT_BEP20_ADDRESS=
+LOW_STOCK_ALERT_THRESHOLD=5
+AI_ENABLED=false
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.0-flash
 ```
 
-## Webhook URL
+The older env names still work too:
 
-Localhost directly Meta webhook-e kaj korbe na. Local test-er jonno `ngrok` use korun:
-
-```bash
-ngrok http 3000
+```env
+VERIFY_TOKEN=
+WHATSAPP_TOKEN=
+PHONE_NUMBER_ID=
 ```
 
-Ngrok URL jodi hoy:
+## WhatsApp Webhook
+
+Callback URL:
 
 ```text
-https://abc123.ngrok-free.app
+https://your-render-service.onrender.com/webhook
 ```
 
-Meta webhook callback URL hobe:
+Verify token:
 
 ```text
-https://abc123.ngrok-free.app/webhook
+my_verify_token_123
 ```
 
-Verify token field-e `.env` er `VERIFY_TOKEN` value diben.
-
-## Meta Webhook Fields
-
-Webhook verify hoye gele WhatsApp webhook subscription-e `messages` field select korun.
-
-## Test
-
-Apnar verified recipient number theke Meta test number-e message pathan:
+Subscribe to:
 
 ```text
-hi
+messages
 ```
 
-Bot reply debe:
-
-```text
-Assalamualaikum! Ki help lagbe?
-```
-
-Useful test messages:
+## User Commands
 
 ```text
 menu
-price
-order
+shop
+buy P00001
+bulk P00001 5
+topup
+deposit 500 TX12345 bkash
+status
+orders
+profile
+coupon WELCOME10
+refer
+sell product details | expected price | contact
 support
-urgent
+ai amar ki korte hobe
 ```
 
-`hi` or `menu` dile WhatsApp interactive buttons ashbe:
+## Admin Commands
+
+Admin number must be in `ADMIN_IDS`, comma-separated, without `+`.
 
 ```text
-Price | Order | Support
+/admin
+/stats
+/products
+/addproduct Gmail Account|50|Fresh gmail account
+/stock P00001 email@example.com|password
+/deposits
+/approve DEP00001
+/reject DEP00001 invalid txid
+/addbal 16078827307 500 manual topup
+/ban 16078827307 reason
+/unban 16078827307
+/broadcast message
 ```
+
+## Local Run
+
+```bash
+copy .env.example .env
+node server.js
+```
+
+Health check:
+
+```text
+http://localhost:3000/health
+```
+
+Debug status:
+
+```text
+http://localhost:3000/debug/status
+```
+
+## Data Storage
+
+This Render version uses a lightweight JSON store in `data/store.json` so the bot can run without paid database setup. For serious production, attach PostgreSQL and migrate the store to a persistent DB.
+
+Never commit `.env`, `webhook.log`, or `data/`.
